@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fullscreen Stream</title>
+
+<style>
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: black;
+    font-family: Arial, sans-serif;
+}
+
+iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+
+/* Setup */
+#setup {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(30,30,30,0.95);
+    padding: 20px;
+    border-radius: 8px;
+    display: flex;
+    gap: 10px;
+    z-index: 2000;
+}
+
+#urlInput {
+    width: 420px;
+    padding: 8px;
+}
+
+/* Controls */
+#controls {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: none;
+    gap: 8px;
+    z-index: 1000;
+    align-items: center;
+}
+
+#idInput {
+    width: 80px;
+    text-align: center;
+    padding: 6px;
+    font-size: 14px;
+}
+
+/* Arrow buttons */
+.btn {
+    background: rgba(255,255,255,0.2);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.5);
+    padding: 6px 10px;
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.btn:hover {
+    background: rgba(255,255,255,0.4);
+}
+</style>
+</head>
+
+<body>
+
+<!-- Setup -->
+<div id="setup">
+    <input id="urlInput" placeholder="Enter full URL">
+    <button id="loadBtn">LOAD</button>
+</div>
+
+<!-- Player -->
+<iframe id="player" src="" allowfullscreen></iframe>
+
+<!-- Controls -->
+<div id="controls">
+    <button class="btn" id="prevBtn">◀</button>
+    <input id="idInput" maxlength="4" placeholder="ID">
+    <button class="btn" id="nextBtn">▶</button>
+</div>
+
+<script>
+const player = document.getElementById('player');
+const urlInput = document.getElementById('urlInput');
+const loadBtn = document.getElementById('loadBtn');
+
+const controls = document.getElementById('controls');
+const idInput = document.getElementById('idInput');
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+
+let base = '';
+let channelId = 0;
+
+// Parse URL
+function parseUrl(url) {
+    const match = url.match(/^(.*?)(\d+)(\.php)$/);
+    if (!match) return null;
+
+    return {
+        base: match[1],
+        id: parseInt(match[2])
+    };
+}
+
+// Load
+function loadStream() {
+    const url = urlInput.value.trim();
+    const parsed = parseUrl(url);
+
+    if (!parsed) {
+        alert('Invalid URL format');
+        return;
+    }
+
+    base = parsed.base;
+    channelId = parsed.id;
+
+    updateChannel(channelId);
+
+    idInput.value = channelId;
+
+    document.getElementById('setup').style.display = 'none';
+    controls.style.display = 'flex';
+}
+
+// Update channel
+function updateChannel(id) {
+    if (!base) return;
+
+    channelId = id;
+    player.src = `${base}${channelId}.php`;
+}
+
+// Input typing works now
+idInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        const val = parseInt(idInput.value);
+        if (!isNaN(val)) updateChannel(val);
+    }
+});
+
+// Buttons
+prevBtn.onclick = () => {
+    channelId = Math.max(0, channelId - 1);
+    idInput.value = channelId;
+    updateChannel(channelId);
+};
+
+nextBtn.onclick = () => {
+    channelId++;
+    idInput.value = channelId;
+    updateChannel(channelId);
+};
+
+// Keyboard arrows
+document.addEventListener('keydown', (e) => {
+    if (!base) return;
+
+    // ONLY block if actively typing
+    if (document.activeElement === idInput) return;
+
+    if (e.key === 'ArrowRight') {
+        nextBtn.click();
+    } else if (e.key === 'ArrowLeft') {
+        prevBtn.click();
+    }
+});
+
+// Load triggers
+loadBtn.onclick = loadStream;
+
+urlInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') loadStream();
+});
+
+// Default
+urlInput.value = "https://playvi.click/premier1.php";
+</script>
+
+</body>
+</html>
